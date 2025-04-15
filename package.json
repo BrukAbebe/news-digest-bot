@@ -1,0 +1,26 @@
+{
+  "name": "news-digest-bot",
+  "version": "1.0.0",
+  "description": " This bot will allow users to subscribe to various news categories, set their preferred time for receiving daily updates, and manage their subscriptions. ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrukAbebe/news-digest-bot.git"
+  },
+  "author": "biruk",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BrukAbebe/news-digest-bot/issues"
+  },
+  "homepage": "https://github.com/BrukAbebe/news-digest-bot#readme",
+  "dependencies": {
+    "axios": "^1.8.4",
+    "dotenv": "^16.5.0",
+    "mongoose": "^8.13.2",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
