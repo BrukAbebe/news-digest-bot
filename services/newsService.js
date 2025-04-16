@@ -35,6 +35,9 @@ module.exports = {
     if (!category || typeof category !== 'string') {
       throw new Error('Invalid category specified');
     }
+    console.log('🧪 Fetching news category:', category);
+    console.log('🔐 Using API Key:', process.env.NEWS_API_KEY);
+
 
     try {
       const { data } = await axios.get('https://newsapi.org/v2/top-headlines', {
@@ -48,6 +51,7 @@ module.exports = {
       });
 
       if (!data.articles) {
+        
         throw new Error('Invalid response format from news API');
       }
 
@@ -55,6 +59,7 @@ module.exports = {
         ? formatDetailedNews(data.articles, category)
         : formatCompactNews(data.articles, category);
     } catch (err) {
+      console.error('❌ Axios error:', err?.response?.data || err.message);
       logError(err, `Fetching ${category} news`);
       if (err.response?.status === 429) {
         throw new Error('⚠️ Too many requests. Please try again in a few minutes.');
