@@ -11,16 +11,6 @@ const UserPreferenceSchema = new Schema({
   firstName: String,
   lastName: String,
   categories: [subscriptionSchema],
-  digestTime: { 
-    type: String, 
-    default: '08:00',
-    validate: {
-      validator: function(v) {
-        return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
-      },
-      message: props => `${props.value} is not a valid time format (HH:MM)`
-    }
-  },
   lastActive: { type: Date, default: Date.now },
   settings: {
     receiveWelcome: { type: Boolean, default: true },

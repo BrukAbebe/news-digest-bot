@@ -1,11 +1,7 @@
 const bot = require('../config/bot');
 const UserPreference = require('../models/userPreferences');
 const { fetchNewsByCategory } = require('../services/newsService');
-const { initScheduler } = require('../services/scheduler');
 const { logError, logInfo, sendUserError } = require('../utils/logger');
-
-// Initialize scheduler when handlers load
-initScheduler();
 
 // News categories with emojis
 const categories = [
@@ -23,7 +19,7 @@ const createMainMenu = () => ({
   reply_markup: {
     keyboard: [
       ['📰 Get News', '📋 My Subscriptions'],
-      ['⏰ Set Time', '⚙️ Settings', 'ℹ️ Help']
+      ['⚙️ Settings', 'ℹ️ Help']
     ],
     resize_keyboard: true
   }
@@ -56,7 +52,6 @@ const showSubscriptionManagement = async (chatId) => {
               callback_data: isSubscribed ? `unsub_${cat.value}` : `sub_${cat.value}`
             }];
           }),
-          [{ text: '⏰ Change Delivery Time', callback_data: 'set_time' }],
           [{ text: '🔙 Main Menu', callback_data: 'main_menu' }]
         ]
       }
@@ -95,7 +90,6 @@ bot.onText(/\/start/, async (msg) => {
       chatId,
       `👋 *Welcome ${user.first_name || ''} to NewsBot!*\n\n` +
       `📡 Get the latest news in any category\n` +
-      `🔔 Receive personalized daily digests\n` +
       `⚡ Quick access to trending topics\n\n` +
       `_Use the menu below or type /help for guidance_`,
       { 
@@ -114,8 +108,7 @@ bot.onText(/\/news|📰 get news/i, (msg) => {
   try {
     bot.sendMessage(
       msg.chat.id,
-      '📡 *Select a news category:*\n\n' +
-      '_Tip: Subscribe to get daily updates at your preferred time_',
+      '📡 *Select a news category:*',
       { 
         parse_mode: 'Markdown',
         ...createCategoryKeyboard('fetch') 
@@ -137,7 +130,7 @@ bot.onText(/\/subscriptions|📋 my subscriptions/i, async (msg) => {
       await bot.sendMessage(
         chatId,
         '🔔 *You have no subscriptions yet*\n\n' +
-        'Subscribe to categories to receive daily news digests at your preferred time.',
+        'Subscribe to categories to quickly access your favorite news.',
         { 
           parse_mode: 'Markdown',
           ...await showSubscriptionManagement(chatId) 
@@ -154,7 +147,6 @@ bot.onText(/\/subscriptions|📋 my subscriptions/i, async (msg) => {
     await bot.sendMessage(
       chatId,
       `📋 *Your Current Subscriptions*\n\n${subList}\n\n` +
-      `⏰ *Delivery Time:* ${user.digestTime}\n\n` +
       `_Manage your subscriptions below:_`,
       { 
         parse_mode: 'Markdown',
@@ -165,26 +157,6 @@ bot.onText(/\/subscriptions|📋 my subscriptions/i, async (msg) => {
   } catch (err) {
     logError(err, 'Subscriptions command');
     await sendUserError(bot, chatId, 'Failed to load subscriptions.');
-  }
-});
-
-bot.onText(/\/time|⏰ set time/i, async (msg) => {
-  try {
-    await bot.sendMessage(
-      msg.chat.id,
-      '⏰ *Set Your Daily Digest Time*\n\n' +
-      'Please enter your preferred time in _HH:MM_ format (24-hour clock).\n\n' +
-      'Examples:\n`08:00` - Morning news\n`13:30` - Lunchtime update\n`18:00` - Evening digest\n\n' +
-      '🔔 _You will receive all your subscribed categories at this time daily_',
-      { 
-        parse_mode: 'Markdown',
-        reply_markup: { force_reply: true, selective: true } 
-      }
-    );
-    logInfo(`Time setting initiated by ${msg.chat.id}`);
-  } catch (err) {
-    logError(err, 'Time command');
-    await sendUserError(bot, msg.chat.id);
   }
 });
 
@@ -232,13 +204,11 @@ bot.onText(/\/help|ℹ️ help/i, async (msg) => {
       `/start - Initialize the bot\n` +
       `/news - Browse news categories\n` +
       `/subscriptions - Manage your subscriptions\n` +
-      `/time - Set your daily digest time\n` +
       `/settings - Configure your preferences\n` +
       `/help - Show this message\n\n` +
       `*Features:*\n` +
       `• Clickable category buttons\n` +
-      `• Personalized daily digests\n` +
-      `• Adjustable delivery time\n` +
+      `• Personalized news access\n` +
       `• Compact/detailed news formats\n\n` +
       `_Use the menu buttons for easy navigation_`,
       { parse_mode: 'Markdown' }
@@ -247,40 +217,6 @@ bot.onText(/\/help|ℹ️ help/i, async (msg) => {
   } catch (err) {
     logError(err, 'Help command');
     await sendUserError(bot, msg.chat.id);
-  }
-});
-
-// Handle time input
-bot.onText(/([01]?[0-9]|2[0-3]):([0-5][0-9])/, async (msg) => {
-  const chatId = msg.chat.id;
-  const time = msg.text;
-  
-  try {
-    await UserPreference.updateOne(
-      { chatId },
-      { digestTime: time }
-    );
-    
-    const user = await UserPreference.findOne({ chatId });
-    const subCount = user?.categories?.length || 0;
-    
-    let reply = `⏰ *Your digest time has been set to ${time}*`;
-    
-    if (subCount > 0) {
-      reply += `\n\nYou'll receive ${subCount} category${subCount > 1 ? 's' : ''} daily at this time.`;
-    } else {
-      reply += '\n\n🔔 _You have no subscriptions yet. Add some to get daily updates!_';
-    }
-    
-    await bot.sendMessage(
-      chatId,
-      reply,
-      { parse_mode: 'Markdown', ...createMainMenu() }
-    );
-    logInfo(`Time set to ${time} by ${chatId}`);
-  } catch (err) {
-    logError(err, 'Time setting');
-    await sendUserError(bot, chatId, 'Failed to update time.');
   }
 });
 
@@ -379,17 +315,6 @@ bot.on('callback_query', async (callbackQuery) => {
         { chat_id: chatId, message_id: messageId }
       );
       logInfo(`Unsubscribed from ${category} by ${chatId}`);
-    }
-    // Handle time setting
-    else if (data === 'set_time') {
-      await bot.deleteMessage(chatId, messageId);
-      await bot.sendMessage(
-        chatId,
-        '⏰ *Please enter your preferred time in HH:MM format (24-hour clock):*\n\n' +
-        'Examples:\n`08:00` - Morning news\n`13:30` - Lunchtime update\n`18:00` - Evening digest',
-        { parse_mode: 'Markdown' }
-      );
-      logInfo(`Time setting initiated via button by ${chatId}`);
     }
     // Toggle news format
     else if (data === 'toggle_format') {
@@ -496,4 +421,3 @@ bot.on('callback_query', async (callbackQuery) => {
     });
   }
 });
-

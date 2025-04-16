@@ -1,14 +1,14 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 const createMainMenu = () => ({
-    reply_markup: {
-      keyboard: [
-        ['📰 Get News', '📋 My Subscriptions'],
-        ['⏰ Set Time', '⚙️ Settings', 'ℹ️ Help']
-      ],
-      resize_keyboard: true
-    }
-  });
+  reply_markup: {
+    keyboard: [
+      ['📰 Get News', '📋 My Subscriptions'],
+      ['⚙️ Settings', 'ℹ️ Help']
+    ],
+    resize_keyboard: true
+  }
+});
 
 const logError = (error, context = '') => {
   if (isDevelopment) {
