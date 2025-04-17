@@ -22,6 +22,6 @@ const UserPreferenceSchema = new Schema({
 
 // Index for categories and digestTime
 UserPreferenceSchema.index({ 'categories.name': 1 });
-UserPreferenceSchema.index({ digestTime: 1 });
+
 
 module.exports = model('UserPreference', UserPreferenceSchema);
