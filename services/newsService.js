@@ -35,8 +35,7 @@ module.exports = {
     if (!category || typeof category !== 'string') {
       throw new Error('Invalid category specified');
     }
-    console.log('🧪 Fetching news category:', category);
-    console.log('🔐 Using API Key:', process.env.NEWS_API_KEY);
+
 
 
     try {
